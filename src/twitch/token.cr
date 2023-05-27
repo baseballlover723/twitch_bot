@@ -1,31 +1,50 @@
 require "http/client"
+require "json"
 
 record Token,
   access_token : String,
   refresh_token : String,
   expires_at : Time,
-  scope : Array(String),
+  scope : Set(String),
   token_type : String do
+  include JSON::Serializable
+
   def self.load(token_path : String) : Token?
-    # TODO load token
-    return nil unless File.exists?(token_path)
+    token = Token.from_json(File.read(token_path)) if File.exists?(token_path)
+    token if token && token.scope == Config::SCOPE
   end
 
-  def self.generate(client_id : String, client_secret : String) : Token
+  def self.save(token_path : String, token : Token) : Token
+    File.write(token_path, token.to_pretty_json)
+    token
+  end
+
+  def self.generate(token_path : String, scope : Set(String), client_id : String, client_secret : String, force_new_code : Bool = false) : Token
+    oauth_url = {{"http://#{read_file("./secrets/.host").id}:#{read_file("./secrets/.port").id}/oauth"}}
+    code = generate_code(scope, client_id, oauth_url)
+
+    generate_token(token_path, client_id, client_secret, code, oauth_url)
+  end
+
+  private def self.generate_code(scope : Set(String), client_id : String, oauth_url : String) : String
+    puts "generating a new code"
     code_channel = Channel(String).new
-    oauth_url = "http://#{{{read_file("./secrets/.host")}}}:#{{{read_file("./secrets/.port")}}}/oauth"
-    scope = "channel%3Amanage%3Apolls+channel%3Aread%3Apolls"
     state = Random.new.hex(20)
-    auth_url = "https://id.twitch.tv/oauth2/authorize?response_type=code&client_id=#{client_id}&redirect_uri=#{oauth_url}&scope=#{scope}&state=#{state}"
+    auth_url = "https://id.twitch.tv/oauth2/authorize?response_type=code&client_id=#{client_id}&redirect_uri=#{oauth_url}&scope=#{URI.encode_path(scope.join(" "))}&state=#{state}"
     WebServer.start(code_channel) do
-      resp = HTTP::Client.get(auth_url)
-      location = resp.headers["Location"]
+      code_resp = HTTP::Client.get(auth_url)
+      puts "code_resp: #{code_resp.inspect}" unless code_resp.status.found?
+      location = code_resp.headers["Location"]
 
       puts location
       puts "waiting user to authorize app"
     end
 
-    code = code_channel.receive
+    code_channel.receive
+  end
+
+  private def self.generate_token(token_path : String, client_id : String, client_secret : String, code : String, oauth_url : String) : Token
+    puts "generating a new token"
     token_url = "https://id.twitch.tv/oauth2/token"
     token_body = {
       "client_id"     => client_id,
@@ -34,12 +53,11 @@ record Token,
       "grant_type"    => "authorization_code",
       "redirect_uri"  => oauth_url,
     }
-  
-    token_resp = HTTP::Client.post(token_url, form: token_body)
-    token_json = NamedTuple(access_token: String, expires_in: Int32, refresh_token: String, scope: Array(String), token_type: String).from_json(token_resp.body)
-    token = Token.new(token_json[:access_token], token_json[:refresh_token], Time.local + Time::Span.new(seconds: token_json[:expires_in]), token_json[:scope], token_json[:token_type])
 
-    # TODO save token
-    token
+    token_resp = HTTP::Client.post(token_url, form: token_body)
+    puts "token_resp: #{token_resp.inspect}" unless token_resp.success?
+
+    token_json = NamedTuple(access_token: String, expires_in: Int32, refresh_token: String, scope: Array(String), token_type: String).from_json(token_resp.body)
+    save(token_path, Token.new(token_json[:access_token], token_json[:refresh_token], Time.local + Time::Span.new(seconds: token_json[:expires_in]), token_json[:scope].to_set, token_json[:token_type]))
   end
 end
