@@ -1,0 +1,13 @@
+name: twitch_bot
+version: 0.1.0
+
+authors:
+  - Philip Ross <dev@baseballlover723.com>
+
+targets:
+  twitch_bot:
+    main: src/twitch_bot.cr
+
+crystal: 1.8.2
+
+license: MIT
