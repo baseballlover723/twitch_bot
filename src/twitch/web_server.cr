@@ -6,6 +6,13 @@ class WebServer
     get "/" do
       "Hello World!"
     end
+
+    get "/oauth" do |env|
+      puts env.inspect
+      env
+    end
+
+
     
     puts "before kemal run"
     spawn do

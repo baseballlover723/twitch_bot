@@ -5,3 +5,4 @@
 *.dwarf
 
 secrets.json
+token.json

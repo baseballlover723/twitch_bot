@@ -1,7 +1,9 @@
-require "./web_server"
+require "./twitch/config"
 
 module TwitchBot
   VERSION = "0.1.0"
 end
 
-WebServer.start
+Config.instance
+
+puts "config: #{Config.instance.inspect}"
