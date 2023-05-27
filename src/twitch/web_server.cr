@@ -17,7 +17,7 @@ class WebServer
     end
 
     spawn &block
-    
-    Kemal.run    
+
+    Kemal.run
   end
 end
