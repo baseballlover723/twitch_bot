@@ -4,6 +4,15 @@ version: 0.1.0
 authors:
   - Philip Ross <dev@baseballlover723.com>
 
+dependencies:
+  kemal:
+    github: kemalcr/kemal
+    version: ~> 1.4.0
+  crirc:
+    github: Meoowww/Crirc
+    commit: c21010a9d9d3ef9067b5610ec4cb4ea389fdc508
+    # version: ~> 0.5.1
+
 targets:
   twitch_bot:
     main: src/twitch_bot.cr
