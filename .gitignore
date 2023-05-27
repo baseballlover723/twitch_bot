@@ -4,4 +4,5 @@
 /.shards/
 *.dwarf
 
-secrets/
+secrets/*
+!secrets/*.example
