@@ -1,25 +1,22 @@
 require "kemal"
 
 class WebServer
-  def self.start(token_channel : Channel(Token), port : Int32 = {{read_file("./secrets/.port").to_i}}, &block : Channel(String) -> Token )
+  def self.start(code_channel : Channel(String), port : Int32 = {{read_file("./secrets/.port").to_i}}, &block)
     Kemal.config.port = port
 
-    code_channel = Channel(String).new
     get "/" do
       "Hello World!"
     end
 
     get "/oauth" do |env|
-      code_channel.send(env.params.query["code"])
-      # env
+      spawn do
+        Kemal.stop
+        code_channel.send(env.params.query["code"])
+      end
       "Success"
     end
 
-    spawn do
-      token = block.call(code_channel)
-      Kemal.stop
-      token_channel.send(token)
-    end
+    spawn &block
     
     Kemal.run    
   end
