@@ -8,7 +8,7 @@ class Config
   property token : Token
 
   private def initialize
-    hash = NamedTuple(client_id: String, client_secret: String).from_json({{read_file("./secrets.json")}})
+    hash = NamedTuple(client_id: String, client_secret: String).from_json({{read_file("./secrets/secrets.json")}})
     @client_id = hash[:client_id]
     @client_secret = hash[:client_secret]
     @token = Token.load(TOKEN_PATH) || Token.generate(@client_id, @client_secret)
