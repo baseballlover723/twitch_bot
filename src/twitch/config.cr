@@ -24,4 +24,8 @@ class Config
   def self.instance
     @@instance ||= new
   end
+
+  def refresh_token! : Nil
+    @token = Token.refresh(TOKEN_PATH, @client_id, @client_secret, @token)
+  end
 end

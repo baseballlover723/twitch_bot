@@ -9,6 +9,8 @@ record Token,
   token_type : String do
   include JSON::Serializable
 
+  # TODO validate token on startup
+
   def self.load(token_path : String) : Token?
     token = Token.from_json(File.read(token_path)) if File.exists?(token_path)
     token if token && token.scope == Config::SCOPE
@@ -24,6 +26,23 @@ record Token,
     code = generate_code(scope, client_id, oauth_url)
 
     generate_token(token_path, client_id, client_secret, code, oauth_url)
+  end
+
+  def self.refresh(token_path : String, client_id : String, client_secret : String, old_token : Token) : Token
+    puts "refreshing token"
+    token_url = "https://id.twitch.tv/oauth2/token"
+    token_body = {
+      "client_id"     => client_id,
+      "client_secret" => client_secret,
+      "grant_type"    => "refresh_token",
+      "refresh_token" => old_token.refresh_token,
+    }
+
+    token_resp = HTTP::Client.post(token_url, form: token_body)
+    puts "token_resp: #{token_resp.inspect}" unless token_resp.success?
+
+    token_json = NamedTuple(access_token: String, expires_in: Int32, refresh_token: String, scope: Array(String), token_type: String).from_json(token_resp.body)
+    save(token_path, Token.new(token_json[:access_token], token_json[:refresh_token], Time.local + Time::Span.new(seconds: token_json[:expires_in]), token_json[:scope].to_set, token_json[:token_type]))
   end
 
   private def self.generate_code(scope : Set(String), client_id : String, oauth_url : String) : String
