@@ -4,4 +4,4 @@ module TwitchBot
   VERSION = "0.1.0"
 end
 
-twitch_client = TwitchClient.new
+twitch_client = Twitch::Client.new
