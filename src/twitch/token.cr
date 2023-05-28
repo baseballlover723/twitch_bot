@@ -10,6 +10,8 @@ module Twitch
     token_type : String do
     include JSON::Serializable
 
+    alias TokenJson = NamedTuple(access_token: String, expires_in: Int32, refresh_token: String, scope: Array(String), token_type: String)
+
     def self.load(token_path : String) : Token?
       token = Token.from_json(File.read(token_path)) if File.exists?(token_path)
       token if token && token.scope == Config::SCOPE
@@ -40,7 +42,7 @@ module Twitch
       token_resp = HTTP::Client.post(token_url, form: token_body)
       puts "token_resp: #{token_resp.inspect}" unless token_resp.success?
 
-      token_json = NamedTuple(access_token: String, expires_in: Int32, refresh_token: String, scope: Array(String), token_type: String).from_json(token_resp.body)
+      token_json = TokenJson.from_json(token_resp.body)
       save(token_path, Token.new(token_json[:access_token], token_json[:refresh_token], Time.local + Time::Span.new(seconds: token_json[:expires_in]), token_json[:scope].to_set, token_json[:token_type]))
     end
 
@@ -75,7 +77,7 @@ module Twitch
       token_resp = HTTP::Client.post(token_url, form: token_body)
       puts "token_resp: #{token_resp.inspect}" unless token_resp.success?
 
-      token_json = NamedTuple(access_token: String, expires_in: Int32, refresh_token: String, scope: Array(String), token_type: String).from_json(token_resp.body)
+      token_json = TokenJson.from_json(token_resp.body)
       save(token_path, Token.new(token_json[:access_token], token_json[:refresh_token], Time.local + Time::Span.new(seconds: token_json[:expires_in]), token_json[:scope].to_set, token_json[:token_type]))
     end
   end
