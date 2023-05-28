@@ -9,8 +9,6 @@ record Token,
   token_type : String do
   include JSON::Serializable
 
-  # TODO validate token on startup
-
   def self.load(token_path : String) : Token?
     token = Token.from_json(File.read(token_path)) if File.exists?(token_path)
     token if token && token.scope == Config::SCOPE
