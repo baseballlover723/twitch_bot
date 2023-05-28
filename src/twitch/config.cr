@@ -4,9 +4,11 @@ require "./web_server"
 class Config
   TOKEN_PATH = "./secrets/token.json"
   SCOPE      = Set{
+    "channel:edit:commercial",
     "channel:manage:polls",
     "moderator:manage:banned_users",
     "moderator:manage:chat_messages",
+    "moderator:manage:chat_settings",
     "moderator:read:chatters",
   }
 
