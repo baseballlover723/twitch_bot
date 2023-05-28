@@ -1,4 +1,5 @@
 require "http/client"
+
 require "./config"
 
 module Twitch

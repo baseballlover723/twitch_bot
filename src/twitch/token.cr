@@ -1,6 +1,8 @@
 require "http/client"
 require "json"
 
+require "./web_server"
+
 module Twitch
   record Token,
     access_token : String,
