@@ -6,6 +6,8 @@ module Twitch
     SCOPE                   = Set{
       "channel:edit:commercial",
       "channel:manage:polls",
+      "chat:edit",
+      "chat:read",
       "moderator:manage:banned_users",
       "moderator:manage:chat_messages",
       "moderator:manage:chat_settings",
