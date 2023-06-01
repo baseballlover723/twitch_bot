@@ -56,6 +56,8 @@ class IRC_Server
     @connected = false
   end
 
+  # TODO put commands into their own files
+  # TODO support only having some commands
   private def while_connected(bot : Crirc::Controller::Client)
     channel_user = uninitialized Twitch::User
     numb_to_guess = Random.rand(MAX_GUESS_NUMB)
