@@ -4,6 +4,8 @@ require "./twitch/twitch_client"
 
 # TODO send part when leaving?
 class IRC_Server
+  MAX_GUESS_NUMB = 100
+
   @@servers = Set(IRC_Server).new
 
   getter twitch_client : Twitch::Client
@@ -56,6 +58,8 @@ class IRC_Server
 
   private def while_connected(bot : Crirc::Controller::Client)
     channel_user = uninitialized Twitch::User
+    numb_to_guess = Random.rand(MAX_GUESS_NUMB)
+    previous_guesses = Set(Int32).new
     bot.on_ready do
       puts "bot is ready"
       bot.join Crirc::Protocol::Chan.new(@channel)
@@ -78,6 +82,29 @@ class IRC_Server
         else
           bot.reply msg, "Rolled a #{max} sided dice and got: #{Random.rand(max) + 1}"
         end
+      when /\!guess \d+/
+        guess = msg.message.as(String)[/\d+/].to_i
+        if guess <= 0 || guess > MAX_GUESS_NUMB
+          bot.reply msg, "Please guess a number from 1 to 100"
+        else
+          if guess == numb_to_guess
+            username = parse_username(msg)
+            bot.reply msg, "Congragulations, #{username} guessed the correct number (#{numb_to_guess})"
+            previous_guesses.clear
+            numb_to_guess = Random.rand(MAX_GUESS_NUMB)
+          elsif (previous_guesses.includes?(guess))
+            bot.reply msg, "Sorry, #{guess} has already been guessed, please try again. previous guesses: #{previous_guesses}"
+          else
+            previous_guesses << guess
+            bot.reply msg, "Sorry your guess of #{guess} was incorrect, please try again. previous guesses: #{previous_guesses}"
+          end
+        end
+      when /\!guess cheat/
+        username = parse_username(msg)
+        next unless username == channel_user.display_name
+        bot.reply msg, "Congragulations, #{username} guessed the correct number (#{numb_to_guess})"
+        previous_guesses.clear
+        numb_to_guess = Random.rand(MAX_GUESS_NUMB)
       when "!list_users"
         chatters = @twitch_client.get_chatters(channel_user.id)
         bot.reply msg, "current chatters: [#{chatters.join(", ")}]"
