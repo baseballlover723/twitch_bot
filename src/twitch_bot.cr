@@ -12,6 +12,9 @@ Signal::INT.trap do
 end
 
 twitch_client = Twitch::Client.new("baseballlover723")
+# user = twitch_client.get_user("baseballlover723")
+# puts "user: #{user}"
+# puts "chatters: #{twitch_client.get_chatters(user.id)}"
 irc_server = IRC_Server.new(twitch_client, "baseballlover723")
 # irc_server2 = IRC_Server.new(twitch_client, "doomerdinger")
 
