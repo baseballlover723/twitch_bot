@@ -55,15 +55,33 @@ class IRC_Server
   end
 
   private def while_connected(bot : Crirc::Controller::Client)
+    channel_user = uninitialized Twitch::User
     bot.on_ready do
       puts "bot is ready"
       bot.join Crirc::Protocol::Chan.new(@channel)
+      channel_user = @twitch_client.get_user(@channel[1..-1])
       puts "joined #{@channel}"
     end.on("PING") do |msg|
       bot.pong(msg.message)
     end.on("PRIVMSG") do |msg|
       username = parse_username(msg)
       puts "got message from \"#{username}\": \"#{msg.message}\" in \"#{msg.arguments}\""
+      case msg.message
+      when "!version"
+        bot.reply msg, "baseballlover723's bot version: #{TwitchBot::VERSION}"
+      when "!ping"
+        bot.reply msg, "pong"
+      when /\!d\d+/
+        max = msg.message.as(String)[/\d+/].to_i
+        if max == 0
+          bot.reply msg, "How the fuck am I supposed to roll a 0 sided dice?????"
+        else
+          bot.reply msg, "Rolled a #{max} sided dice and got: #{Random.rand(max) + 1}"
+        end
+      when "!list_users"
+        chatters = @twitch_client.get_chatters(channel_user.id)
+        bot.reply msg, "current chatters: [#{chatters.join(", ")}]"
+      end
     end
 
     spawn do

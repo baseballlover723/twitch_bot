@@ -8,6 +8,7 @@ module Twitch
       "channel:manage:polls",
       "chat:edit",
       "chat:read",
+      "channel:read:redemptions",
       "moderator:manage:banned_users",
       "moderator:manage:chat_messages",
       "moderator:manage:chat_settings",
