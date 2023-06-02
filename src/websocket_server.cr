@@ -11,12 +11,13 @@ class Websocket_Server
   getter irc_server : IRC_Server
   @connected : Bool
   @joined : Bool
+  @joined_channel : Channel(Nil)
 
   def initialize(@twitch_client : Twitch::Client, @irc_server : IRC_Server)
-    sleep 2
     @connected = false
     @joined = false
     @websocket_client = HTTP::WebSocket.new(URI.parse("wss://eventsub.wss.twitch.tv/ws"))
+    @joined_channel = Channel(Nil).new
     setup_actions
 
     @@servers << self
@@ -49,6 +50,7 @@ class Websocket_Server
     spawn do
       @websocket_client.run
     end
+    @joined_channel.receive
   end
 
   def stop
@@ -77,6 +79,7 @@ class Websocket_Server
       @websocket_client.on_message(&->handle_message(String))
       setup_subs(welcome_message[:payload][:session][:id])
       @joined = true
+      @joined_channel.send(nil)
       @irc_server.send_message("setup websocket")
     end
   end

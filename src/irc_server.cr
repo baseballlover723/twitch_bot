@@ -14,6 +14,7 @@ class IRC_Server
   getter channel_user : Twitch::User
   @connected : Bool
   @joined : Bool
+  @joined_channel : Channel(Nil)
 
   def initialize(@twitch_client : Twitch::Client, channel : String)
     @connected = false
@@ -25,6 +26,7 @@ class IRC_Server
       port: 6697,
       ssl: true,
       pass: "oauth:#{@twitch_client.config.token.access_token}"
+    @joined_channel = Channel(Nil).new
     @@servers << self
   end
 
@@ -56,6 +58,7 @@ class IRC_Server
     # @irc_client.puts("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands")
     @irc_client.puts("CAP REQ :twitch.tv/membership twitch.tv/commands")
     @irc_client.start(&->while_connected(Crirc::Controller::Client))
+    @joined_channel.receive
   end
 
   def stop
@@ -75,6 +78,7 @@ class IRC_Server
       puts "bot is ready"
       bot.join Crirc::Protocol::Chan.new(@channel)
       @joined = true
+      @joined_channel.send(nil)
       send_message("Bot is ready")
       puts "joined #{@channel}"
     end.on("PING") do |msg|
