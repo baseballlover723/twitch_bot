@@ -53,6 +53,17 @@ module Twitch
       data[:data].map { |chatter| chatter.user_name }
     end
 
+    # TODO support webhook
+    def post_create_eventsub(type : String, version : String, condition : NamedTuple, session_id : String)
+      body = {
+        type: type,
+        version: version,
+        condition: condition,
+        transport: {method: "websocket", session_id: session_id},
+      }
+      resp = post("https://api.twitch.tv/helix/eventsub/subscriptions", body: body)
+    end
+
     {% for method in %w(get post put patch delete) %}
     {% has_body = !%w(get delete).includes?(method) %}
       def {{method.id}}(

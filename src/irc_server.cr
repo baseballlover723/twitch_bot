@@ -3,6 +3,7 @@ require "crirc"
 require "./twitch/twitch_client"
 
 # TODO send part when leaving?
+# TODO figure out why it doesn't always start, and have it block until it joins channel i think?
 class IRC_Server
   MAX_GUESS_NUMB = 100
 
@@ -10,6 +11,7 @@ class IRC_Server
 
   getter twitch_client : Twitch::Client
   getter channel : String
+  getter channel_user : Twitch::User
   @connected : Bool
   @joined : Bool
 
@@ -17,6 +19,7 @@ class IRC_Server
     @connected = false
     @joined = false
     @channel = channel.starts_with?('#') ? channel : "##{channel}"
+    @channel_user = @twitch_client.get_user(@channel[1..-1])
     @irc_client = Crirc::Network::Client.new nick: @twitch_client.config.username,
       ip: "irc.chat.twitch.tv",
       port: 6697,
@@ -66,13 +69,11 @@ class IRC_Server
   # TODO put commands into their own files
   # TODO support only having some commands
   private def while_connected(bot : Crirc::Controller::Client)
-    channel_user = uninitialized Twitch::User
     numb_to_guess = Random.rand(MAX_GUESS_NUMB)
     previous_guesses = Set(Int32).new
     bot.on_ready do
       puts "bot is ready"
       bot.join Crirc::Protocol::Chan.new(@channel)
-      channel_user = @twitch_client.get_user(@channel[1..-1])
       @joined = true
       send_message("Bot is ready")
       puts "joined #{@channel}"
@@ -117,7 +118,7 @@ class IRC_Server
         previous_guesses.clear
         numb_to_guess = Random.rand(MAX_GUESS_NUMB)
       when "!list_users"
-        chatters = @twitch_client.get_chatters(channel_user.id)
+        chatters = @twitch_client.get_chatters(@channel_user.id)
         bot.reply msg, "current chatters: [#{chatters.join(", ")}]"
       end
     end

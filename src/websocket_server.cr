@@ -13,6 +13,7 @@ class Websocket_Server
   @joined : Bool
 
   def initialize(@twitch_client : Twitch::Client, @irc_server : IRC_Server)
+    sleep 2
     @connected = false
     @joined = false
     @websocket_client = HTTP::WebSocket.new(URI.parse("wss://eventsub.wss.twitch.tv/ws"))
@@ -74,18 +75,18 @@ class Websocket_Server
       puts "message recieved (welcome): #{msg}"
       welcome_message = WelcomeMessage.from_json(msg)
       @websocket_client.on_message(&->handle_message(String))
-      setup_subs
+      setup_subs(welcome_message[:payload][:session][:id])
       @joined = true
       @irc_server.send_message("setup websocket")
     end
   end
 
-  private def setup_subs
-    #TODO
+  private def setup_subs(session_id : String)
+    @twitch_client.post_create_eventsub("channel.channel_points_custom_reward_redemption.add", "1", {broadcaster_user_id: @irc_server.channel_user.id}, session_id)
   end
 
   private def handle_message(msg_str : String)
-    puts "message recieved: #{msg_str}"
+    puts "message recieved:"
     msg = JSON.parse(msg_str)
     puts msg
     case msg["metadata"]["message_type"]
