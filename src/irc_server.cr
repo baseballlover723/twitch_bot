@@ -11,9 +11,11 @@ class IRC_Server
   getter twitch_client : Twitch::Client
   getter channel : String
   @connected : Bool
+  @joined : Bool
 
   def initialize(@twitch_client : Twitch::Client, channel : String)
     @connected = false
+    @joined = false
     @channel = channel.starts_with?('#') ? channel : "##{channel}"
     @irc_client = Crirc::Network::Client.new nick: @twitch_client.config.username,
       ip: "irc.chat.twitch.tv",
@@ -41,6 +43,10 @@ class IRC_Server
     @connected
   end
 
+  def joined? : Bool
+    @joined
+  end
+
   def start
     @connected = true
     @irc_client.connect
@@ -53,6 +59,7 @@ class IRC_Server
     puts "stopping irc for #{@channel}"
     # @irc_client.puts("PART #{@channel}")
     @irc_client.close
+    @joined = false
     @connected = false
   end
 
@@ -66,6 +73,8 @@ class IRC_Server
       puts "bot is ready"
       bot.join Crirc::Protocol::Chan.new(@channel)
       channel_user = @twitch_client.get_user(@channel[1..-1])
+      @joined = true
+      send_message("Bot is ready")
       puts "joined #{@channel}"
     end.on("PING") do |msg|
       bot.pong(msg.message)
@@ -129,5 +138,9 @@ class IRC_Server
 
   private def parse_username(msg : Crirc::Protocol::Message) : String
     msg.source[0...msg.source.index('!')]
+  end
+
+  def send_message(msg : String) : Nil
+    @irc_client.puts("PRIVMSG #{@channel} :#{msg}")
   end
 end
