@@ -5,7 +5,7 @@ require "./twitch/twitch_client"
 # TODO send part when leaving?
 # TODO figure out why it doesn't always start, and have it block until it joins channel i think?
 class IRC_Server
-  MAX_GUESS_NUMB = 100
+  MAX_GUESS_NUMB = 25
 
   @@servers = Set(IRC_Server).new
 
@@ -84,6 +84,7 @@ class IRC_Server
     end.on("PING") do |msg|
       bot.pong(msg.message)
     end.on("PRIVMSG") do |msg|
+      sleep 2 unless @channel == "#baseballlover723"
       username = parse_username(msg)
       puts "got message from \"#{username}\": \"#{msg.message}\" in \"#{msg.arguments}\""
       case msg.message
@@ -98,29 +99,32 @@ class IRC_Server
         else
           bot.reply msg, "Rolled a #{max} sided dice and got: #{Random.rand(max) + 1}"
         end
-      when /\!guess \d+/
+      when /\!guess \d+$/
         guess = msg.message.as(String)[/\d+/].to_i
         if guess <= 0 || guess > MAX_GUESS_NUMB
-          bot.reply msg, "Please guess a number from 1 to 100"
+          bot.reply msg, "Please guess an integer from 1 to #{MAX_GUESS_NUMB}"
         else
           if guess == numb_to_guess
             username = parse_username(msg)
-            bot.reply msg, "Congragulations, #{username} guessed the correct number (#{numb_to_guess})"
+            bot.reply msg, "Congragulations, #{username} guessed the correct integer (#{numb_to_guess})"
             previous_guesses.clear
             numb_to_guess = Random.rand(MAX_GUESS_NUMB)
           elsif (previous_guesses.includes?(guess))
-            bot.reply msg, "Sorry, #{guess} has already been guessed, please try again. previous guesses: #{previous_guesses}"
+            bot.reply msg, "Sorry, #{guess} has already been guessed, please try again. previous guesses: #{previous_guesses.to_a.sort}"
           else
             previous_guesses << guess
-            bot.reply msg, "Sorry your guess of #{guess} was incorrect, please try again. previous guesses: #{previous_guesses}"
+            bot.reply msg, "Sorry your guess of #{guess} was incorrect, please try again. previous guesses: #{previous_guesses.to_a.sort}"
           end
         end
       when /\!guess cheat/
-        username = parse_username(msg)
-        next unless username == channel_user.display_name
-        bot.reply msg, "Congragulations, #{username} guessed the correct number (#{numb_to_guess})"
+        username = parse_username(msg).downcase
+        # puts "username: #{username}, channel_user: #{channel_user.inspect}"
+        next unless username == channel_user.login
+        bot.reply msg, "Congragulations, #{username} guessed the correct integer (#{numb_to_guess})"
         previous_guesses.clear
         numb_to_guess = Random.rand(MAX_GUESS_NUMB)
+      when /\!guess/
+        bot.reply msg, "Please guess an integer from 1 to #{MAX_GUESS_NUMB}"
       when "!list_users"
         chatters = @twitch_client.get_chatters(@channel_user.id)
         bot.reply msg, "current chatters: [#{chatters.join(", ")}]"
