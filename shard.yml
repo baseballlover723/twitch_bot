@@ -14,8 +14,8 @@ dependencies:
     # version: ~> 0.5.1
 
 targets:
-  twitch_bot:
-    main: src/twitch_bot.cr
+  server:
+    main: src/main.cr
 
 crystal: 1.8.2
 

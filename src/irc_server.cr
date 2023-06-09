@@ -1,5 +1,6 @@
 require "crirc"
 
+require "./twitch_bot"
 require "./twitch/twitch_client"
 
 # TODO send part when leaving?
