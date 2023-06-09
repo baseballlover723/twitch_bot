@@ -22,6 +22,7 @@ class IRC_Server
     @joined = false
     @channel = channel.starts_with?('#') ? channel : "##{channel}"
     @channel_user = @twitch_client.get_user(@channel[1..-1])
+    puts "irc channel_user: #{@channel_user.inspect}"
     @irc_client = Crirc::Network::Client.new nick: @twitch_client.config.username,
       ip: "irc.chat.twitch.tv",
       port: 6697,
